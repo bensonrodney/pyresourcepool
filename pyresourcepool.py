@@ -17,9 +17,13 @@ class ResourcePool(object):
 
     @contextmanager
     def get_resource(self, block=True):
+        """
+        Returns an object from the pool and waits if necessary. If 'block' is
+        False, then None is returned if the pool has been depleted.
+        """
         obj = None
         try:
-            # if the pool is empty, wait for an object to be returned ot the
+            # if the pool is empty, wait for an object to be returned to the
             # pool
             while True:
                 with self._lock:
