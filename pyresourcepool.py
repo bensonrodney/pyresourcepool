@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+""" Basic python object resource pool.
+"""
+
 import copy
 import time
 from threading import RLock
