@@ -21,14 +21,14 @@ def pool():
 
 def get_and_hold_resource(p, t):
     """ wait/get resource and sleep for 't' seconds """
-    with p.get_resource() as x:
+    with p.get_resource():
         time.sleep(t)
 
 
 def test_pool(pool):
-    num = len(pool._available)
     assert len(pool._available) == 4
     assert (pool._available[0].name == "John")
+
     with pool.get_resource() as x:
         assert (x.name == "John")
         assert len(pool._available) == 3
