@@ -75,10 +75,34 @@ def test_pool(pool):
     for t in threads:
         t.start()
 
-    time.sleep(2.0)
+    time.sleep(4.0)
 
     assert len(pool._available) == 4
     assert (pool._available[0].name == "Jason")
     assert (pool._available[1].name == "John")
     assert (pool._available[2].name == "Jake")
     assert (pool._available[3].name == "Jim")
+
+    # remove all but one from the pool
+    for i in range(3):
+        with pool.get_resource() as x:
+            pool.remove(x)
+            assert len(pool._available) == 3 - i
+        assert len(pool._available) == 3 - i
+
+    # remove the last item from the pool and expect an exception
+    with pytest.raises(rp.AllResourcesRemoved):
+        with pool.get_resource() as x:
+            pool.remove(x)
+            # we should not get to this bad assertion because an exception
+            # should be raised
+            assert False
+
+
+    # try to get an object from the pool and expect an exception
+    with pytest.raises(rp.AllResourcesRemoved):
+        with pool.get_resource() as x:
+            # we should not get to this bad assertion because an exception
+            # should be raised
+            assert False
+
