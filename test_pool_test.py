@@ -98,11 +98,9 @@ def test_pool(pool):
             # should be raised
             assert False
 
-
     # try to get an object from the pool and expect an exception
     with pytest.raises(rp.AllResourcesRemoved):
         with pool.get_resource() as x:
             # we should not get to this bad assertion because an exception
             # should be raised
             assert False
-

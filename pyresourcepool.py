@@ -39,7 +39,8 @@ class ResourcePool(object):
             self._available = [o for o in self._available if o is not obj]
             if self.all_removed():
                 raise AllResourcesRemoved(
-                    "All resources have been removed. Further use of the resource pool is void.")
+                    "All resources have been removed. "
+                    "Further use of the resource pool is void.")
 
     @contextmanager
     def get_resource(self, block=True):
@@ -55,7 +56,7 @@ class ResourcePool(object):
                 with self._lock:
                     if self.all_removed():
                         raise AllResourcesRemoved(
-                            "All resources have been removed. Further use of " \
+                            "All resources have been removed. Further use of "
                             "the resource pool is void.")
                     if self._available:
                         obj = self._available.pop(0)
