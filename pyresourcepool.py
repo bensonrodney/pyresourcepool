@@ -23,7 +23,7 @@ class ResourcePool(object):
         self._objects = objects
         self._removed = {}
         for o in self._objects:
-            self._removed[str(o)] = False
+            self._removed[id(o)] = False
 
         # create another list with the same object references:
         # copy.copy() only copies the references so the two lists are
@@ -32,12 +32,12 @@ class ResourcePool(object):
         self._lock = RLock()
 
     def all_removed(self):
-        return all(self._removed[str(o)] for o in self._objects)
+        return all(self._removed[id(o)] for o in self._objects)
 
     def remove(self, obj):
         with self._lock:
             # mark the resource as deleted
-            self._removed[str(obj)] = True
+            self._removed[id(obj)] = True
             # if it is currently in the available set, remove it
             self._available = [o for o in self._available if o is not obj]
             if self.all_removed():
@@ -84,7 +84,7 @@ class ResourcePool(object):
     def return_resource(self, obj):
         if obj and (obj in self._objects):
             with self._lock:
-                if not self._removed[str(obj)]:
+                if not self._removed[id(obj)]:
                     self._available.append(obj)
 
     @contextmanager
