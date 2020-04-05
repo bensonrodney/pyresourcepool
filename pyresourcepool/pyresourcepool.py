@@ -13,6 +13,10 @@ class AllResourcesRemoved(Exception):
     """ Raised when all recources in the pool have been removed.
     """
 
+class ObjectNotInPool(Exception):
+    """ Raise when operations are performed for an object that is
+    not part of the resource pool.
+    """
 
 class ResourcePool(object):
     def __init__(self, objects):
@@ -36,6 +40,8 @@ class ResourcePool(object):
 
     def remove(self, obj):
         with self._lock:
+            if obj not in self._objects:
+                raise ObjectNotInPool("Object is not in the list of pool objects.")
             # mark the resource as deleted
             self._removed[id(obj)] = True
             # if it is currently in the available set, remove it

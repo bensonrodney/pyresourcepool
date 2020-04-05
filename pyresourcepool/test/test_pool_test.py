@@ -106,3 +106,13 @@ def test_pool_object_removal(pool):
             # we should not get to this bad assertion because an exception
             # should be raised
             assert False
+
+
+def test_pool_object_removal_non_member(pool):
+    # create a new object
+    obj = Person("Jeff")
+    with pytest.raises(rp.ObjectNotInPool):
+        pool.remove(obj)
+        # we should not get to this bad assertion because an exception
+        # should be raised
+        assert False
