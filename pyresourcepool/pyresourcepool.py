@@ -13,10 +13,12 @@ class AllResourcesRemoved(Exception):
     """ Raised when all recources in the pool have been removed.
     """
 
+
 class ObjectNotInPool(Exception):
     """ Raise when operations are performed for an object that is
     not part of the resource pool.
     """
+
 
 class ResourcePool(object):
     def __init__(self, objects):
