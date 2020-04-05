@@ -3,7 +3,7 @@
 import pytest
 from threading import Thread
 import time
-import pyresourcepool as rp
+import pyresourcepool.pyresourcepool as rp
 
 
 class Person(object):
@@ -25,7 +25,7 @@ def get_and_hold_resource(p, t):
         time.sleep(t)
 
 
-def test_pool(pool):
+def test_pool_use(pool):
     assert len(pool._available) == 4
     assert (pool._available[0].name == "John")
 
@@ -83,6 +83,8 @@ def test_pool(pool):
     assert (pool._available[2].name == "Jake")
     assert (pool._available[3].name == "Jim")
 
+
+def test_pool_object_removal(pool):
     # remove all but one from the pool
     for i in range(3):
         with pool.get_resource() as x:
