@@ -1,5 +1,7 @@
 # pyresourcepool
 
+Github: https://github.com/bensonrodney/pyresourcepool
+
 Simple thread-safe resource pool to wait and/or use a limited set of resources, where a resource is a python object.
 
 An example use case, and the reason this module was created, is when there exists a queue of actions to be performed but on a limited number of resources. Workers take actions from the queue and pull resources from the resource pool, perform the action and return the resource to the pool. The worker then pulls the next action from the queue and another recourse and this continues until there are no more actions in the queue.
