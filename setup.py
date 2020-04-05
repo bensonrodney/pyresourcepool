@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name='PyResourcePool-EjectedAlien',
+    name='PyResourcePool',
     version='0.1.1',
     author='Jason Milen',
     author_email='jpmilen@gmail.com',
