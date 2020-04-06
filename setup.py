@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='PyResourcePool',
-    version='0.1.5',
+    version='0.1.6',
     author='Jason Milen',
     author_email='jpmilen@gmail.com',
     url='http://pypi.python.org/pypi/PyResourcePool/',

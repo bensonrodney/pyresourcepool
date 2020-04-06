@@ -3,6 +3,7 @@
 import pytest
 from threading import Thread
 import time
+from contextlib import ExitStack
 import pyresourcepool.pyresourcepool as rp
 
 
@@ -116,3 +117,27 @@ def test_pool_object_removal_non_member(pool):
         # we should not get to this bad assertion because an exception
         # should be raised
         assert False
+
+
+def test_pool_non_block(pool):
+    with ExitStack() as stack:
+        obj1 = stack.enter_context(pool.get_resource(block=False))
+        assert obj1.name == "John"
+
+        obj2 = stack.enter_context(pool.get_resource(block=False))
+        assert obj2.name == "Jim"
+
+        obj3 = stack.enter_context(pool.get_resource(block=False))
+        assert obj3.name == "Jake"
+
+        obj4 = stack.enter_context(pool.get_resource(block=False))
+        assert obj4.name == "Jason"
+
+        # pool should be depleted by this point
+        obj5 = stack.enter_context(pool.get_resource(block=False))
+        assert obj5 is None
+
+        obj6 = stack.enter_context(pool.get_resource(block=False))
+        assert obj6 is None
+
+    assert len(pool._available) == 4
