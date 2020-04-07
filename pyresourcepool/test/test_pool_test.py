@@ -141,3 +141,48 @@ def test_pool_non_block(pool):
         assert obj6 is None
 
     assert len(pool._available) == 4
+
+
+def test_pool_add(pool):
+    with pool.get_resource() as obj1:
+        assert obj1.name == "John"
+
+    newPerson = Person("Jenny")
+    pool.add(newPerson)
+    assert len(pool._available) == 5
+
+    with ExitStack() as stack:
+        obj1 = stack.enter_context(pool.get_resource(block=False))
+        assert obj1.name == "Jim"
+
+        obj2 = stack.enter_context(pool.get_resource(block=False))
+        assert obj2.name == "Jake"
+
+        obj3 = stack.enter_context(pool.get_resource(block=False))
+        assert obj3.name == "Jason"
+
+        obj4 = stack.enter_context(pool.get_resource(block=False))
+        assert obj4.name == "John"
+
+        # pool should be depleted by this point
+        obj5 = stack.enter_context(pool.get_resource(block=False))
+        assert obj5.name == "Jenny"
+
+        with pytest.raises(rp.ObjectAlreadyInPool):
+            pool.add(obj2)
+            # shouldn't make to the bad assert below
+            assert False
+
+        obj6 = stack.enter_context(pool.get_resource(block=False))
+        assert obj6 is None
+
+        assert len(pool._available) == 0
+
+    assert len(pool._available) == 5
+
+    with pytest.raises(rp.ObjectAlreadyInPool):
+        pool.add(newPerson)
+        # shouldn't make to the 'assert False' below
+        assert False
+
+    assert len(pool._available) == 5

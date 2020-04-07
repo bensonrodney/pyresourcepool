@@ -14,6 +14,11 @@ class AllResourcesRemoved(Exception):
     """
 
 
+class ObjectAlreadyInPool(Exception):
+    """ Raised when adding an object that is already in the pool.
+    """
+
+
 class ObjectNotInPool(Exception):
     """ Raise when operations are performed for an object that is
     not part of the resource pool.
@@ -39,6 +44,15 @@ class ResourcePool(object):
 
     def all_removed(self):
         return all(self._removed[id(o)] for o in self._objects)
+
+    def add(self, obj):
+        # new objects are added to the end of the available resources
+        with self._lock:
+            if obj in self._objects:
+                raise ObjectAlreadyInPool("Object is already in the pool.")
+            self._objects.append(obj)
+            self._available.append(obj)
+            self._removed[id(obj)] = False
 
     def remove(self, obj):
         with self._lock:
