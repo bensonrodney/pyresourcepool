@@ -47,12 +47,15 @@ class ResourcePool(object):
 
     def add(self, obj):
         # new objects are added to the end of the available resources
+        if type(obj) is not list:
+            obj = [obj]
         with self._lock:
-            if obj in self._objects:
-                raise ObjectAlreadyInPool("Object is already in the pool.")
-            self._objects.append(obj)
-            self._available.append(obj)
-            self._removed[id(obj)] = False
+            for o in obj:
+                if o in self._objects:
+                    raise ObjectAlreadyInPool("Object is already in the pool.")
+                self._objects.append(o)
+                self._available.append(o)
+                self._removed[id(o)] = False
 
     def remove(self, obj):
         with self._lock:
