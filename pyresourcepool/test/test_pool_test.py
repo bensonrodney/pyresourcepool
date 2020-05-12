@@ -195,16 +195,16 @@ def test_pool_add_list(pool):
 
     with ExitStack() as stack:
         obj1 = stack.enter_context(pool.get_resource(block=False))
-        assert obj1.name == "Jim"
+        assert obj1.name == "John"
 
         obj2 = stack.enter_context(pool.get_resource(block=False))
-        assert obj2.name == "Jake"
+        assert obj2.name == "Jim"
 
         obj3 = stack.enter_context(pool.get_resource(block=False))
-        assert obj3.name == "Jason"
+        assert obj3.name == "Jake"
 
         obj4 = stack.enter_context(pool.get_resource(block=False))
-        assert obj4.name == "John"
+        assert obj4.name == "Jason"
 
         obj5 = stack.enter_context(pool.get_resource(block=False))
         assert obj5.name == "Jenny"
