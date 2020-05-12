@@ -164,9 +164,9 @@ def test_pool_add(pool):
         obj4 = stack.enter_context(pool.get_resource(block=False))
         assert obj4.name == "John"
 
-        # pool should be depleted by this point
         obj5 = stack.enter_context(pool.get_resource(block=False))
         assert obj5.name == "Jenny"
+        # pool should be depleted by this point
 
         with pytest.raises(rp.ObjectAlreadyInPool):
             pool.add(obj2)
@@ -186,3 +186,44 @@ def test_pool_add(pool):
         assert False
 
     assert len(pool._available) == 5
+
+
+def test_pool_add_list(pool):
+    newPeople = [Person("Jenny"), Person("Jasmin"), Person("June")]
+    pool.add(newPeople)
+    assert len(pool._available) == 7
+
+    with ExitStack() as stack:
+        obj1 = stack.enter_context(pool.get_resource(block=False))
+        assert obj1.name == "Jim"
+
+        obj2 = stack.enter_context(pool.get_resource(block=False))
+        assert obj2.name == "Jake"
+
+        obj3 = stack.enter_context(pool.get_resource(block=False))
+        assert obj3.name == "Jason"
+
+        obj4 = stack.enter_context(pool.get_resource(block=False))
+        assert obj4.name == "John"
+
+        obj5 = stack.enter_context(pool.get_resource(block=False))
+        assert obj5.name == "Jenny"
+
+        obj6 = stack.enter_context(pool.get_resource(block=False))
+        assert obj6.name == "Jasmin"
+
+        obj7 = stack.enter_context(pool.get_resource(block=False))
+        assert obj7.name == "June"
+        # pool should be depleted by this point
+
+        with pytest.raises(rp.ObjectAlreadyInPool):
+            pool.add(obj2)
+            # shouldn't make to the bad assert below
+            assert False
+
+        obj8 = stack.enter_context(pool.get_resource(block=False))
+        assert obj8 is None
+
+        assert len(pool._available) == 0
+
+    assert len(pool._available) == 7
