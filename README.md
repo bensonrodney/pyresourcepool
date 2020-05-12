@@ -25,9 +25,9 @@ rp = RecourcePool(objects)
 # to the pool.
 with rp.get_resource() as obj:
     do_stuff_with_object(obj)
-    
+
 # at this point, outside the 'with' block, the object will have been
 # returned to the object pool.
 ```
 
-If a resource/object becomes invalid and should not be used again it can be removed from the pool with the pool's `remove_resource(obj)` method. An exception will be raised when the last resource is removed from the pool or when an attempt is made to get a resource from an empty pool. 
+If a resource/object becomes invalid and should not be used again it can be removed from the pool with the pool's `remove_resource(obj)` method. An exception will be raised when the last resource is removed from the pool or when an attempt is made to get a resource from an empty pool.
