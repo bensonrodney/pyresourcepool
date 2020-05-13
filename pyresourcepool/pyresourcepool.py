@@ -46,15 +46,26 @@ class ResourcePool(object):
         return all(self._removed[id(o)] for o in self._objects)
 
     def add(self, obj):
-        # new objects are added to the end of the available resources
+        """
+         Adds new objects to the pool, 'obj' can be a single object or a list of
+         objects and new objects are added to the end of the available resources.
+         """
+        if type(obj) is not list:
+            obj = [obj]
         with self._lock:
-            if obj in self._objects:
-                raise ObjectAlreadyInPool("Object is already in the pool.")
-            self._objects.append(obj)
-            self._available.append(obj)
-            self._removed[id(obj)] = False
+            for o in obj:
+                if o in self._objects:
+                    raise ObjectAlreadyInPool("Object is already in the pool.")
+                self._objects.append(o)
+                self._available.append(o)
+                self._removed[id(o)] = False
 
     def remove(self, obj):
+        """
+        Removes an object from the pool so that it can't be handed out as an
+        available resource again. If the object passed in is not in the pool
+        an ObjectNotInPool exception is raised.
+        """
         with self._lock:
             if obj not in self._objects:
                 raise ObjectNotInPool("Object is not in the list of pool objects.")
@@ -71,7 +82,7 @@ class ResourcePool(object):
         """
         Gets a resource from the pool but in an "unmanaged" fashion. It is
         up to you to return the resource to the pool by calling
-        return_resourc().
+        return_resource().
 
         Return value is an object from the pool but see the note below.
 
@@ -79,7 +90,7 @@ class ResourcePool(object):
         You should consider using get_resource() instead in a 'with' statement
         as this will handle returning the resource automatically. eg:
 
-            with get_resrouce() as r:
+            with pool.get_resrouce() as r:
                 do_stuff(r)
 
         The resource will be automatically returned upon exiting the 'with'
