@@ -273,7 +273,7 @@ def test_pool_return_with_callback_ok(pool_with_callback_ok):
     assert obj2.name == "Jim"
     assert obj2 not in pool_with_callback_ok._available
     # callback should have completed now
-    time.sleep(1)
+    time.sleep(2)
     assert obj1.name == "JOHN"
     assert obj1 in pool_with_callback_ok._available
     assert obj2.name == "JIM"
