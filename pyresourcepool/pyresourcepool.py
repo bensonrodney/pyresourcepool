@@ -5,7 +5,8 @@
 
 import copy
 import time
-from threading import RLock
+import traceback
+from threading import RLock, Thread
 from contextlib import contextmanager
 
 
@@ -26,9 +27,23 @@ class ObjectNotInPool(Exception):
 
 
 class ResourcePool(object):
-    def __init__(self, objects):
+    def __init__(self, objects, return_callback=None):
         """
         Instantiate with a list of objects you want in the resource pool.
+
+        'return_callback' is a function or method that can be used to
+        perform some action on an object before it is returned to the
+        pool but without making the process that returned the object
+        needing to wait for that function to be run.
+
+        This is useful for performing a time consumeing "factory reset"
+        (or similar) on an object before it is returned to the pool but
+        without holding up the process that used the resource.
+
+        The callback function, if specified should just take the object as an
+        argument and success is measured by no exceptions being raised. If
+        an exception is raised by the callback then the object will be removed
+        from the pool rather than being returned as an available resource.
         """
         # used to track the original pool of resources, not used yet
         self._objects = objects
@@ -41,6 +56,7 @@ class ResourcePool(object):
         # separate lists that point to the same objects
         self._available = copy.copy(objects)
         self._lock = RLock()
+        self._return_callback = return_callback
 
     def all_removed(self):
         return all(self._removed[id(o)] for o in self._objects)
@@ -104,7 +120,8 @@ class ResourcePool(object):
                 if self.all_removed():
                     raise AllResourcesRemoved(
                         "All resources have been removed. Further use of "
-                        "the resource pool is void.")
+                        "the resource pool is void unless new resources are"
+                        "added.")
                 if self._available:
                     obj = self._available.pop(0)
 
@@ -114,11 +131,37 @@ class ResourcePool(object):
 
         return obj
 
-    def return_resource(self, obj):
+    def return_resource(self, obj, force=False):
+        """ Returns a resource to the pool but if self._return_callback is not None
+        Then start a thread that calls that callback before returning the resource
+        to the pool. This allows the calling process to not have to wait for that
+        pre-return-to-pool operation (eg. factory reset of a device that is being
+        tested).
+        """
+        if (not force) and (self._return_callback):
+            thread = Thread(target=self._run_return_callback, args=(obj,))
+            thread.setName("return_obj_{}".format(id(obj)))
+            thread.start()
+            return
         if obj and (obj in self._objects):
             with self._lock:
                 if not self._removed[id(obj)]:
                     self._available.append(obj)
+
+    def _run_return_callback(self, obj):
+        """ This should only really be called by self.return_resource() and is intended
+        to be run in a thread to perform some pre-returnn-to-pool process without
+        the process that used the resource having to wait for that operation to occur.
+
+        If running the callback raises an exception the resource will be removed from
+        the pool.
+        """
+        try:
+            self._return_callback(obj)
+            self.return_resource(obj, force=True)
+        except Exception:
+            traceback.print_exc()
+            self.remove(obj)
 
     @contextmanager
     def get_resource(self, block=True):

@@ -12,12 +12,40 @@ class Person(object):
         self.name = name
 
 
+def do_callback_upper(obj):
+    obj.name = obj.name.upper()
+
+
+def do_callback_exception(obj):
+    raise ValueError("some random error")
+    # the next line should never be run
+    obj.name = obj.name.upper()
+
+
 @pytest.fixture
 def pool():
     return rp.ResourcePool([Person("John"),
                             Person("Jim"),
                             Person("Jake"),
                             Person("Jason")])
+
+
+@pytest.fixture
+def pool_with_callback_ok():
+    return rp.ResourcePool([Person("John"),
+                            Person("Jim"),
+                            Person("Jake"),
+                            Person("Jason")],
+                           return_callback=do_callback_upper)
+
+
+@pytest.fixture
+def pool_with_callback_exception():
+    return rp.ResourcePool([Person("John"),
+                            Person("Jim"),
+                            Person("Jake"),
+                            Person("Jason")],
+                           return_callback=do_callback_exception)
 
 
 def get_and_hold_resource(p, t):
@@ -227,3 +255,35 @@ def test_pool_add_list(pool):
         assert len(pool._available) == 0
 
     assert len(pool._available) == 7
+
+
+def test_pool_return_with_callback_ok(pool_with_callback_ok):
+    assert pool_with_callback_ok._return_callback == do_callback_upper
+    with pool_with_callback_ok.get_resource() as obj1:
+        assert obj1.name == "John"
+        assert obj1 not in pool_with_callback_ok._available
+        with pool_with_callback_ok.get_resource() as obj2:
+            assert obj2.name == "Jim"
+            assert obj2 not in pool_with_callback_ok._available
+    time.sleep(1)
+    assert obj1.name == "JOHN"
+    assert obj1 in pool_with_callback_ok._available
+    assert obj2.name == "JIM"
+    assert obj2 in pool_with_callback_ok._available
+
+
+def test_pool_return_with_callback_exception(pool_with_callback_exception):
+    assert pool_with_callback_exception._return_callback == do_callback_exception
+    with pool_with_callback_exception.get_resource() as obj1:
+        assert obj1.name == "John"
+        assert obj1 not in pool_with_callback_exception._available
+        with pool_with_callback_exception.get_resource() as obj2:
+            assert obj2.name == "Jim"
+            assert obj2 not in pool_with_callback_exception._available
+    time.sleep(1)
+    assert obj1.name == "John"
+    assert obj1 not in pool_with_callback_exception._available
+    assert pool_with_callback_exception._removed[id(obj1)]
+    assert obj2.name == "Jim"
+    assert obj2 not in pool_with_callback_exception._available
+    assert pool_with_callback_exception._removed[id(obj2)]
