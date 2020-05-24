@@ -13,6 +13,7 @@ class Person(object):
 
 
 def do_callback_upper(obj):
+    time.sleep(1)
     obj.name = obj.name.upper()
 
 
@@ -265,6 +266,13 @@ def test_pool_return_with_callback_ok(pool_with_callback_ok):
         with pool_with_callback_ok.get_resource() as obj2:
             assert obj2.name == "Jim"
             assert obj2 not in pool_with_callback_ok._available
+    # The due to the sleep in the callback, the objects should not yet have
+    # been returned to the pool, or had the operation in the callback performed yet
+    assert obj1.name == "John"
+    assert obj1 not in pool_with_callback_ok._available
+    assert obj2.name == "Jim"
+    assert obj2 not in pool_with_callback_ok._available
+    # callback should have completed now
     time.sleep(1)
     assert obj1.name == "JOHN"
     assert obj1 in pool_with_callback_ok._available
