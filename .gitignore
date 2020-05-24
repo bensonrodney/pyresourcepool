@@ -1,1 +1,6 @@
+*.swp
+.eggs
+build
+dist
 __pycache__
+PyResourcePool.egg-info
