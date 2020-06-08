@@ -54,4 +54,4 @@ with rp.get_resource() as obj2:
     do_stuff_with_object(obj2)
 ```
 
-_NOTE:_ the `resource_pool_return_callback` attribute is removed from the object once it has been returned to the pool. If you need to run the object specific callback on the object again next time then you need to set that callback attribute again.
+**NOTE:** the `resource_pool_return_callback` attribute is removed from the object once it has been returned to the pool. If you need to run the object specific callback on the object again next time then you need to set that callback attribute again.
