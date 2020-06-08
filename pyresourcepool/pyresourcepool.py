@@ -9,6 +9,9 @@ import traceback
 from threading import RLock, Thread
 from contextlib import contextmanager
 
+# Callback attribute name when adding a return callback to an object
+CALLBACK_ATTRIBUTE = 'resource_pool_return_callback'
+
 
 class AllResourcesRemoved(Exception):
     """ Raised when all recources in the pool have been removed.
@@ -132,23 +135,44 @@ class ResourcePool(object):
         return obj
 
     def return_resource(self, obj, force=False):
-        """ Returns a resource to the pool but if self._return_callback is not None
-        Then start a thread that calls that callback before returning the resource
+        """ Returns a resource to the pool but if:
+          - obj has a property named  'resource_pool_return_callback' and it is
+            not None
+          OR
+          - self._return_callback is not None
+        then start a thread that calls that callback before returning the resource
         to the pool. This allows the calling process to not have to wait for that
         pre-return-to-pool operation (eg. factory reset of a device that is being
         tested).
-        """
-        if (not force) and (self._return_callback):
-            thread = Thread(target=self._run_return_callback, args=(obj,))
-            thread.setName("return_obj_{}".format(id(obj)))
-            thread.start()
-            return
-        if obj and (obj in self._objects):
-            with self._lock:
-                if not self._removed[id(obj)]:
-                    self._available.append(obj)
 
-    def _run_return_callback(self, obj):
+        NOTE: the callback added as a property to the object gets precedence
+              over the one specified for the pool.
+        NOTE: the callback property is stripped from the obj during the return
+              process.
+        """
+        if (not obj) or (obj not in self._objects):
+            raise ObjectNotInPool("Object {} not a member of the pool".format(str(obj)))
+
+        if not force:
+            callback = None
+            if hasattr(obj, CALLBACK_ATTRIBUTE) and \
+                    getattr(obj, CALLBACK_ATTRIBUTE) is not None:
+                callback = getattr(obj, CALLBACK_ATTRIBUTE)
+                # strip the callback attribute from the object
+                delattr(obj, CALLBACK_ATTRIBUTE)
+            elif self._return_callback:
+                callback = self._return_callback
+            if callback:
+                thread = Thread(target=self._run_return_callback, args=(obj, callback))
+                thread.setName("return_obj_{}".format(id(obj)))
+                thread.start()
+                return
+
+        with self._lock:
+            if not self._removed[id(obj)]:
+                self._available.append(obj)
+
+    def _run_return_callback(self, obj, callback):
         """ This should only really be called by self.return_resource() and is intended
         to be run in a thread to perform some pre-returnn-to-pool process without
         the process that used the resource having to wait for that operation to occur.
@@ -157,7 +181,7 @@ class ResourcePool(object):
         the pool.
         """
         try:
-            self._return_callback(obj)
+            callback(obj)
             self.return_resource(obj, force=True)
         except Exception:
             traceback.print_exc()
@@ -183,4 +207,5 @@ class ResourcePool(object):
             obj = self.get_resource_unmanaged(block=block)
             yield obj
         finally:
-            self.return_resource(obj)
+            if obj:
+                self.return_resource(obj)

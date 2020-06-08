@@ -17,6 +17,11 @@ def do_callback_upper(obj):
     obj.name = obj.name.upper()
 
 
+def do_callback_lower(obj):
+    time.sleep(1)
+    obj.name = obj.name.lower()
+
+
 def do_callback_exception(obj):
     raise ValueError("some random error")
     # the next line should never be run
@@ -295,3 +300,61 @@ def test_pool_return_with_callback_exception(pool_with_callback_exception):
     assert obj2.name == "Jim"
     assert obj2 not in pool_with_callback_exception._available
     assert pool_with_callback_exception._removed[id(obj2)]
+
+
+def test_pool_return_with_obj_callback_ok(pool_with_callback_ok):
+    assert pool_with_callback_ok._return_callback == do_callback_upper
+    with pool_with_callback_ok.get_resource() as obj1:
+        assert obj1.name == "John"
+        assert obj1 not in pool_with_callback_ok._available
+        # override the callback just for obj1
+        obj1.resource_pool_return_callback = do_callback_lower
+        with pool_with_callback_ok.get_resource() as obj2:
+            assert obj2.name == "Jim"
+            assert obj2 not in pool_with_callback_ok._available
+    # The due to the sleep in the callback, the objects should not yet have
+    # been returned to the pool, or had the operation in the callback performed yet
+    assert obj1.name == "John"
+    assert obj1 not in pool_with_callback_ok._available
+    assert obj2.name == "Jim"
+    assert obj2 not in pool_with_callback_ok._available
+    # callback should have completed now
+    time.sleep(2)
+    assert obj1.name == "john"
+    assert obj1 in pool_with_callback_ok._available
+    assert obj2.name == "JIM"
+    assert obj2 in pool_with_callback_ok._available
+
+
+def test_pool_return_with_object_specific_callback(pool):
+    assert pool._return_callback is None
+    with pool.get_resource() as obj1:
+        assert obj1.name == "John"
+        assert obj1 not in pool._available
+        obj1.resource_pool_return_callback = do_callback_lower
+        with pool.get_resource() as obj2:
+            assert obj2.name == "Jim"
+            assert obj2 not in pool._available
+    # The due to the sleep in the callback, the objects should not yet have
+    # been returned to the pool, or had the operation in the callback performed yet
+    assert obj1.name == "John"
+    assert obj1 not in pool._available
+    # callback should have completed now
+    time.sleep(2)
+    assert obj1.name == "john"
+    assert obj1 in pool._available
+    assert obj2.name == "Jim"
+    assert obj2 in pool._available
+
+
+def test_return_object_not_in_pool(pool, pool_with_callback_ok):
+    obj1 = Person("Kevin")
+    with pytest.raises(rp.ObjectNotInPool):
+        pool.return_resource(obj1)
+        # we should not make it to this bad assertion
+        assert False
+
+    with pytest.raises(rp.ObjectNotInPool):
+        pool_with_callback_ok.return_resource(obj1)
+        # we should not make it to this bad assertion
+        assert False
